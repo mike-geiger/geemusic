@@ -199,7 +199,7 @@ $ heroku config:set APP_URL=https://[heroku_app_name].herokuapp.com
 
 At this point, your server should by live and ready to start accepting requests at `https://[heroku_app_name].herokuapp.com/alexa.` Note, that while using the free tier, you may experience timeout errors when you server has received no requests for over 30 minutes.
 
-## (Optional) Use Docker
+## (Optional) Use Docker (non-Raspbian)
 
 If you have docker running on a server, running this server as a docker container may make the most sense for your setup. As of right now there is not an image available in the dockerhub, but building the container is very easy.
 
@@ -223,6 +223,21 @@ $ docker run -d -e GOOGLE_EMAIL=steve@stevegattuso.me -e GOOGLE_PASSWORD=[passwo
 ```
 
 At this point you're set up and ready. 
+
+## (Optional) Use Docker (Raspbian)
+
+Follow the instructions for Docker on non-Raspbian, but substitute the following build command.
+
+```bash
+$ docker build -f Docker-raspi/Dockerfile -t geemusic .
+```
+
+I also found that Foreman was starting on port 5000 regardless of the other settings. I had success substituting the run command:
+
+```bash
+$ docker run -d -e GOOGLE_EMAIL=steve@stevegattuso.me -e GOOGLE_PASSWORD=[password] \
+-e APP_URL=http://alexa-geemusic.stevegattuso.me -p 5000:5000 geemusic
+```
 
 ## (Optional) Last.fm support
 *Only attempt this if you have significant technical expertise.* To scrobble all played tracks to [Last.fm](http://www.last.fm) follow the instructions at [this repo](https://github.com/huberf/lastfm-scrobbler) to get auth tokens.
