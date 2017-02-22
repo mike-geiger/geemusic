@@ -1,9 +1,12 @@
+from builtins import object
+from fuzzywuzzy import fuzz
 from os import environ
-import threading, traceback
+import threading, random
 
 from gmusicapi import CallFailure, Mobileclient
 
-class GMusicWrapper:
+
+class GMusicWrapper(object):
     def __init__(self, username, password, logger=None):
         self._api = Mobileclient()
         self.logger = logger
@@ -34,7 +37,7 @@ class GMusicWrapper:
         if query_type == 'song':
             query_type = 'track'
 
-        return map(lambda x: x[query_type], results[hits_key])
+        return [x[query_type] for x in results[hits_key]]
 
     def is_indexing(self):
         return self.indexing_thread.is_alive()
@@ -62,7 +65,8 @@ class GMusicWrapper:
         if len(search) == 0:
             return False
 
-        return self._api.get_artist_info(search[0]['artistId'], max_top_tracks=100)
+        return self._api.get_artist_info(search[0]['artistId'],
+                                         max_top_tracks=100)
 
     def get_album(self, name, artist_name=None):
         if artist_name:
@@ -74,6 +78,41 @@ class GMusicWrapper:
             return False
 
         return self._api.get_album_info(search[0]['albumId'])
+
+    def get_latest_album(self, artist_name=None):
+        search = self._search("artist", artist_name)
+
+        if len(search) == 0:
+            return False
+
+        artist_info = self._api.get_artist_info(search[0]['artistId'], include_albums=True)
+        album_info = artist_info['albums']
+        sorted_list = sorted(album_info.__iter__(), key=lambda s: s['year'], reverse=True)
+
+        for index, val in enumerate(sorted_list):
+            album_info = self._api.get_album_info(album_id=sorted_list[index]['albumId'], include_tracks=True)
+            if len(album_info['tracks']) >= 5:
+                return album_info
+
+        return False
+
+    def get_album_by_artist(self, artist_name, album_id=None):
+        search = self._search("artist", artist_name)
+        if len(search) == 0:
+            return False
+
+        artist_info = self._api.get_artist_info(search[0]['artistId'], include_albums=True)
+        album_info = artist_info['albums']
+        random.shuffle(album_info)
+
+        for index, val in enumerate(album_info):
+            album = self._api.get_album_info(album_id=album_info[index]['albumId'], include_tracks=True)
+            if album['albumId'] != album_id and len(album['tracks']) >= 5:
+                return album
+
+        return False
+
+
 
     def get_song(self, name, artist_name=None):
         if artist_name:
@@ -87,7 +126,7 @@ class GMusicWrapper:
         return search[0]
 
     def get_station(self, title, artist_id=None):
-        if artist_id != None:
+        if artist_id is not None:
             return self._api.create_station(title, artist_id=artist_id)
 
     def get_station_tracks(self, station_id):
@@ -97,7 +136,10 @@ class GMusicWrapper:
         return self._api.get_stream_url(song_id)
 
     def get_stream_url(self, song_id):
-        return "%s/stream/%s" % (environ['APP_URL'], song_id)
+        return "%s/alexa/stream/%s" % (environ['APP_URL'], song_id)
+
+    def get_thumbnail(self, artist_art):
+        return artist_art.replace("http://", "https://")
 
     def get_all_user_playlist_contents(self):
         return self._api.get_all_user_playlist_contents()
@@ -121,12 +163,85 @@ class GMusicWrapper:
         else:
             return (None, None)
 
+    def get_artist_album_list(self, artist_name):
+        search = self._search("artist", artist_name)
+        if len(search) == 0:
+            return False
+
+        artist_info = self._api.get_artist_info(search[0]['artistId'], include_albums=True)
+        album_list_text = "Here's the album listing for %s: " % artist_name
+
+        counter = 0
+        for index, val in enumerate(artist_info['albums']):
+            if counter > 25:  # alexa will time out if the list takes too long to iterate through
+                break
+            album_info = self._api.get_album_info(album_id=artist_info['albums'][index]['albumId'], include_tracks=True)
+            if len(album_info['tracks']) > 5:
+                counter += 1
+                album_list_text += (artist_info['albums'][index]['name']) + ", "
+        return album_list_text
+
+    def get_latest_artist_albums(self, artist_name):
+        search = self._search("artist", artist_name)
+
+        if len(search) == 0:
+            return False
+
+        artist_info = self._api.get_artist_info(search[0]['artistId'], include_albums=True)
+        album_list = artist_info['albums']
+
+        sorted_list = sorted(album_list.__iter__(), key=lambda s: s['year'], reverse=True)
+
+        speech_text = 'The latest albums by %s are ' % artist_name
+
+        counter = 0
+        for index, val in enumerate(sorted_list):
+            if counter > 5:
+                break
+            else:
+                album_info = self._api.get_album_info(album_id=sorted_list[index]['albumId'], include_tracks=True)
+                if len(album_info['tracks']) >= 5:
+                    counter += 1
+                    album_name = sorted_list[index]['name']
+                    album_year = sorted_list[index]['year']
+                    speech_text += '%s, released in %d, ' % (album_name, album_year)
+
+        return speech_text
+
+    def closest_match(self, request_name, all_matches, minimum_score=70):
+        # Give each match a score based on its similarity to the requested
+        # name
+        request_name = request_name.lower().replace(" ", "")
+        scored_matches = []
+        for i, match in enumerate(all_matches):
+            name = match['name'].lower().replace(" ", "")
+            scored_matches.append({
+                'index': i,
+                'name': name,
+                'score': fuzz.ratio(name, request_name)
+            })
+
+        sorted_matches = sorted(scored_matches, key=lambda a: a['score'], reverse=True)
+        top_scoring = sorted_matches[0]
+        best_match = all_matches[top_scoring['index']]
+
+        # Make sure we have a decent match (the score is n where 0 <= n <= 100)
+        if top_scoring['score'] < minimum_score:
+            return None
+
+        return best_match
+
+    def get_genres(self, parent_genre_id=None):
+        return self._api.get_genres(parent_genre_id)
+
     def increment_song_playcount(self, song_id, plays=1, playtime=None):
         return self._api.increment_song_playcount(song_id, plays, playtime)
 
     def get_song_data(self, song_id):
         return self._api.get_track_info(song_id)
 
+
     @classmethod
     def generate_api(cls, **kwargs):
-        return cls(environ['GOOGLE_EMAIL'], environ['GOOGLE_PASSWORD'], **kwargs)
+        return cls(environ['GOOGLE_EMAIL'], environ['GOOGLE_PASSWORD'],
+                   **kwargs)

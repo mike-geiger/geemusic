@@ -11,7 +11,7 @@ This project is still in its early phases and subject to a bit of change, howeve
 **This Skill was developed to only work on English (US) language devices.**
 This is due to the Skill using features from the [Developer Preview of the ASK Built-in Library](https://developer.amazon.com/blogs/post/Tx2EWC85F6H422/Introducing-the-ASK-Built-in-Library-Developer-Preview-Pre-Built-Models-for-Hund). Which frustratingly has only been made available to developers in the US.
 
-There is a workaround for UK users if they setup the Skill slightly differently, instructions are included below. 
+There is a workaround for UK users if they setup the Skill slightly differently, instructions are included below.
 
 
 ## Features
@@ -41,18 +41,28 @@ Like this song
 Dislike this song
 Thumbs-up this song
 Thumbs-down this song
+
+Play the latest album by Run The Jewels
+List the latest albums by The Wonder Years
+List all albums by Pink Floyd (up to 25 listed)
+Play an album by Dryjacket
+Play a different album
 ```
 
 Of course you can also say things like "Alexa stop," "Alexa next," etc.
 
 ### Roadmap
-
+```
+Skip to the 3rd song in this album
+Play the third track off of In Rainbows
+Play a station for bedtime
+Play a station for partying
+```
 - [ ] Play the latest album by Run The Jewels
 - [ ] Skip to the 3rd song in this album
 - [ ] Play the third track off of In Rainbows
 - [ ] Play a station for bedtime
 - [ ] Play a station for partying
-
 
 ## Setup
 Let's cut right to the chase: how can you enable this skill on your own Dot/Echo? Unfortunately the process is a bit finicky, but I'll try to make it as simple as I can.
@@ -68,7 +78,7 @@ First things first, clone this repository to your server:
 $ git clone https://github.com/stevenleeg/geemusic.git
 ```
 
-Next, `cd` in and install the dependencies, you ideally want to do this within a `virtualenv` if you have it installed, but otherwise you can omit those steps and just run the `pip install` line. Note that some of the dependencies require a few packages that you may not already have on your system: `python-dev`, `libssl-dev`, and `libffi-dev`. On Ubuntu these can be installed by running `sudo apt-get install python-dev libssl-dev libffi-dev`.
+Next make sure you have Python 3 installed and `cd` in and install the dependencies, you ideally want to do this within a `virtualenv` if you have it installed, but otherwise you can omit those steps and just run the `pip3 install` line. Note that some of the dependencies require a few packages that you may not already have on your system: `python3-dev`, `libssl-dev`, and `libffi-dev`. On Ubuntu these can be installed by running `sudo apt-get install python3-dev libssl-dev libffi-dev`.
 
 ```bash
 # Run this if you have virtualenv installed:
@@ -76,7 +86,7 @@ $ virtualenv .venv
 $ source .venv/bin/activate
 
 # Continue on if you have virtualenv or start here if you don't:
-$ pip install -r requirements.txt
+$ pip3 install -r requirements.txt
 ```
 
 Once the requirements are installed we'll need to create a file, `.env` to store our credentials. Here's an example:
@@ -228,7 +238,7 @@ $ docker run -d -e GOOGLE_EMAIL=steve@stevegattuso.me -e GOOGLE_PASSWORD=[passwo
 -e APP_URL=http://alexa-geemusic.stevegattuso.me -p 4000:4000 geemusic
 ```
 
-At this point you're set up and ready. 
+At this point you're set up and ready.
 
 ## (Optional) Last.fm support
 *Only attempt this if you have significant technical expertise.* To scrobble all played tracks to [Last.fm](http://www.last.fm) follow the instructions at [this repo](https://github.com/huberf/lastfm-scrobbler) to get auth tokens.
