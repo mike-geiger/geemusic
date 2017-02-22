@@ -211,8 +211,14 @@ $ git clone https://github.com/stevenleeg/geemusic.git
 
 Now, `cd` in and build the container. We'll tag it 'geemusic', but you can call it whatever you want.
 
+####(non Rasbian)
 ```bash
 $ docker build -t geemusic .
+```
+
+####(Rasbian)
+```bash
+$ docker build -f Docker-raspi/Dockerfile -t geemusic .
 ```
 
 Finally, run the container with the appropriate environment variables and port forwards. Alternatively set up a compose file or your orchestration engine, but those are outside the scope of this readme.
