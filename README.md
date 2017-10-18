@@ -8,11 +8,14 @@ This project is still in its early phases and subject to a bit of change, howeve
 
 **This Skill is not made by nor endorsed by Google.** That being said, it is based off of the wonderful [gmusicapi](https://github.com/simon-weber/gmusicapi) by [Simon Weber](https://simon.codes), which has been around since 2012, so this should work as long as Google doesn't decide to lock down its APIs in a major way.
 
-**This Skill was developed to only work on English (US) language devices.**
-This is due to the Skill using features from the [Developer Preview of the ASK Built-in Library](https://developer.amazon.com/blogs/post/Tx2EWC85F6H422/Introducing-the-ASK-Built-in-Library-Developer-Preview-Pre-Built-Models-for-Hund). Which frustratingly has only been made available to developers in the US.
+### Supported Echo languages
 
-There is a workaround for UK users if they setup the Skill slightly differently, instructions are included below.
+**This Skill was developed to only work on devices (Echo, Dot, Tap etc) using English(US) on a Amazon US account**
+This is due to the Skill using features from the [Developer Preview of the ASK Built-in Library](https://developer.amazon.com/blogs/post/Tx2EWC85F6H422/Introducing-the-ASK-Built-in-Library-Developer-Preview-Pre-Built-Models-for-Hund). Which frustratingly has only been made available to developers in the US (edit: six months later and there is still no access for UK/DE).
 
+There is a workaround for English(UK) users (Amazon UK account) if they setup the Skill slightly differently, instructions are included below.
+
+This language issue only affects the Echo/Amazon side of things and not your Google Music account [#100](https://github.com/stevenleeg/geemusic/issues/100)
 
 ## Features
 What can this puppy do, you might ask? Here's a list of example phrases that you can try once you get GeeMusic up and running. Remember that each of these phrases needs to be prefixed with "Alexa, tell Geemusic to..." in order for Alexa to know that you're requesting music from GeeMusic, not the built-in music services. They're also fuzzy, so feel free to try slight variations of phrases to see if they'll work.
@@ -47,20 +50,18 @@ List the latest albums by The Wonder Years
 List all albums by Pink Floyd (up to 25 listed)
 Play an album by Dryjacket
 Play a different album
+
+Skip to Scar Tissue by Red Hot Chili Peppers
+Jump to Knee Deep by Zac Brown Band
 ```
 
 Of course you can also say things like "Alexa stop," "Alexa next," etc.
 
 ### Roadmap
 ```
-Skip to the 3rd song in this album
-Play the third track off of In Rainbows
 Play a station for bedtime
 Play a station for partying
 ```
-- [ ] Play the latest album by Run The Jewels
-- [ ] Skip to the 3rd song in this album
-- [ ] Play the third track off of In Rainbows
 - [ ] Play a station for bedtime
 - [ ] Play a station for partying
 
@@ -98,6 +99,9 @@ GOOGLE_PASSWORD=password
 
 # Publicly accessible URL to your server, WITHOUT trailing slash
 APP_URL=https://alexa-geemusic.stevegattuso.me
+
+# Debug mode: Set to True or False
+DEBUG_MODE=False
 ```
 
 I would *highly reccomend* that you enable 2-factor authentication on your Google account and only insert an application specific password into this file. Remember that it is stored in plaintext on your local computer! (TODO: fix this!)
@@ -129,6 +133,10 @@ Going through the various sections
 | Audio Player | Yes |
 
 ### Interaction model
+
+This setup varies depending on the language settings your Echo device is using.
+
+See the note at the top about supported languages. 
 
 #### US English users
 
@@ -205,6 +213,7 @@ We now need to configure it to work with your Google account. Type the following
 $ heroku config:set GOOGLE_EMAIL=steve@stevegattuso.me
 $ heroku config:set GOOGLE_PASSWORD=[password]
 $ heroku config:set APP_URL=https://[heroku_app_name].herokuapp.com
+$ heroku config:set DEBUG_MODE=False
 ```
 
 At this point, your server should by live and ready to start accepting requests at `https://[heroku_app_name].herokuapp.com/alexa.` Note, that while using the free tier, you may experience timeout errors when you server has received no requests for over 30 minutes.
@@ -258,7 +267,7 @@ $ docker run -d -e GOOGLE_EMAIL=steve@stevegattuso.me -e GOOGLE_PASSWORD=[passwo
 ## (Optional) Last.fm support
 *Only attempt this if you have significant technical expertise.* To scrobble all played tracks to [Last.fm](http://www.last.fm) follow the instructions at [this repo](https://github.com/huberf/lastfm-scrobbler) to get auth tokens.
 
-Then add them as environement variables to your setup (e.g. `LAST_FM_API`, `LAST_FM_SECRET`, `LAST_FM_SESSION_KEY`). To finish enabling create a `LAST_FM_ACTIVE` environement variable and set it to `True`.
+Then add them as environement variables to your setup (e.g. `LAST_FM_API`, `LAST_FM_API_SECRET`, `LAST_FM_SESSION_KEY`). To finish enabling create a `LAST_FM_ACTIVE` environement variable and set it to `True`.
 
 ## Troubleshooting
 ### Pausing/resuming skips to the beginning of the song.

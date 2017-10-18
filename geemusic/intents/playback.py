@@ -1,5 +1,6 @@
 from flask_ask import statement, audio
 from geemusic import ask, queue, app, api
+import json
 
 ##
 # Callbacks
@@ -153,6 +154,30 @@ def currently_playing():
                        large_image_url=thumbnail)
 
 
+@ask.intent('GeeMusicListAllPlaylists')
+def list_all_playlists():
+    if api.is_indexing():
+        return statement("Please wait for your tracks to finish indexing")
+
+    all_playlists = api.get_all_user_playlist_contents()
+    playlist_names = []
+    for i, match in enumerate(all_playlists):
+
+        playlist_names.append(match['name'])
+        total_playlists = i + 1
+
+    # Adds "and" before the last playlist to sound more natural when speaking
+    if len(playlist_names) >= 3:
+        and_placement = len(playlist_names) - 1
+        playlist_names.insert(and_placement, 'and')
+
+    app.logger.debug(playlist_names)
+    playlist_names = ', '.join(playlist_names)
+
+    speech_text = "You have %s playlists in your library. They are, %s." % (total_playlists, playlist_names)
+    return statement(speech_text)
+
+
 @ask.intent("GeeMusicThumbsUpIntent")
 def thumbs_up():
     if len(queue.song_ids) == 0:
@@ -187,6 +212,37 @@ def restart_tracks():
     queue.current_index = 0
     stream_url = api.get_stream_url(queue.current())
     return audio("Restarting tracks").play(stream_url)
+
+
+@ask.intent("GeeMusicSkipTo")
+# https://github.com/stevenleeg/geemusic/issues/28
+def skip_to(song_name, artist_name):
+    if song_name is None:
+        return statement("Please say a song name to use this feature")
+
+    if artist_name is None:
+        artist_name = ""
+    best_match = api.closest_match(song_name, queue.tracks, artist_name, 0)
+
+    if best_match is None:
+        return statement("Sorry, I couldn't find a close enough match.")
+
+    try:
+        song, song_id = api.extract_track_info(best_match)
+        index = queue.song_ids.index(song_id)
+    except:
+        return statement("Sorry, I couldn't find that song in the queue")
+
+    queue.current_index = index
+    stream_url = api.get_stream_url(queue.current())
+
+    thumbnail = api.get_thumbnail(queue.current_track()['albumArtRef'][0]['url'])
+    speech_text = "Skipping to %s by %s" % (queue.current_track()['title'], queue.current_track()['artist'])
+    return audio(speech_text).play(stream_url) \
+        .standard_card(title=speech_text,
+                       text='',
+                       small_image_url=thumbnail,
+                       large_image_url=thumbnail)
 
 
 @ask.session_ended
