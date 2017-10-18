@@ -12,9 +12,9 @@ RUN apk update \
       linux-headers \
       musl \
       openssl-dev \
-      py2-pip \
-      python \
-      python-dev \
+      py3-pip \
+      python3 \
+      python3-dev \
       ruby \
       ruby-bundler \
       ruby-irb\
@@ -26,7 +26,7 @@ RUN apk update \
 COPY . /geemusic
 WORKDIR /geemusic
 
-RUN pip install -r requirements.txt \
+RUN pip3 install -r requirements.txt \
  && gem install bundler \
  && gem install foreman
 
