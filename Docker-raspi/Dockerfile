@@ -1,4 +1,4 @@
-FROM orax/alpine-armhf:3.5
+FROM hypriot/rpi-alpine
 MAINTAINER Mike Geiger <NOOP@chstech.org>
 
 RUN apk update \
